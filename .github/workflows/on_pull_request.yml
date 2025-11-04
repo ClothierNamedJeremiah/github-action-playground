@@ -74,22 +74,25 @@ jobs:
 
       - name: Send slack notification
         uses: slackapi/slack-github-action@v2.1.1
-        token: ${{ secrets.SLACK_BOT_PRS_TOKEN }}
-        # https://docs.slack.dev/reference/methods/chat.postMessage/
-        method: chat.postMessage
-        payload: |
-          channel: ${{ secrets.SLACK_BOT_PRS_TOKEN }}
-          username: "TEAM - PR Bot"
-          icon_emoji ":github:"
-          text: "PR Ready for Review"
-          blocks:
-            - type: section
-              text:
-                type: mrkdwn
-                text: "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }} - #${{ steps.pr_data.outputs.number }}>* by ${{ steps.pr_data.outputs.author }}"
-            - type: context
-              elements:
-                - type: mrkdwn
-                  text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
-                - type: mrkdwn
-                  text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
+        with:
+          # FIXME: add secret to github repository
+          token: ${{ secrets.SLACK_BOT_PRS_TOKEN }}
+          # https://docs.slack.dev/reference/methods/chat.postMessage/
+          method: chat.postMessage
+          # FIXME: update channel to point towards team channel
+          payload: |
+            channel: '#team-pr-notifications'
+            username: "TEAM - PR Bot"
+            icon_emoji: ":github:"
+            text: "PR Ready for Review"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }} - #${{ steps.pr_data.outputs.number }}>* by ${{ steps.pr_data.outputs.author }}"
+              - type: context
+                elements:
+                  - type: mrkdwn
+                    text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
+                  - type: mrkdwn
+                    text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
