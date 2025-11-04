@@ -41,7 +41,9 @@ jobs:
           additions=$(echo "$pr_json" | jq -r '.additions')
           deletions=$(echo "$pr_json" | jq -r '.deletions')
           changed_files=$(echo "$pr_json" | jq -r '.changed_files')
+          number=$(echo "$pr_json" | jq -r '.number')
 
+          echo "number=$number" >> $GITHUB_OUTPUT
           echo "title=$title" >> $GITHUB_OUTPUT
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "author=$author" >> $GITHUB_OUTPUT
@@ -56,29 +58,38 @@ jobs:
         run: |
           echo "🔍 Previewing Slack payload (manual run only)"
           cat <<'EOF'
-          {
-            "text": ":bell: *Pull Request Ready for Review!*",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }}>*\nOpened by *${{ steps.pr_data.outputs.author }}*"
-                }
-              },
-              {
-                "type": "context",
-                "elements": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Branch:* `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Changes:* +${{ steps.pr_data.outputs.additions }} / -${{ steps.pr_data.outputs.deletions }} across ${{ steps.pr_data.outputs.changed_files }} files"
-                  }
-                ]
-              }
-            ]
-          }
+          text: "PR Ready for Review"
+          blocks:
+            - type: section
+              text:
+                type: mrkdwn
+                text: "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }} - #${{ steps.pr_data.outputs.number }}>* by ${{ steps.pr_data.outputs.author }}"
+            - type: context
+              elements:
+                - type: mrkdwn
+                  text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
+                - type: mrkdwn
+                  text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
           EOF
+
+      - name: Send slack notification
+        uses: slackapi/slack-github-action@v2.1.1
+        token: ${{ secrets.SLACK_BOT_PRS_TOKEN }}
+        # https://docs.slack.dev/reference/methods/chat.postMessage/
+        method: chat.postMessage
+        payload: |
+          channel: ${{ secrets.SLACK_BOT_PRS_TOKEN }}
+          username: "TEAM - PR Bot"
+          icon_emoji ":github:"
+          text: "PR Ready for Review"
+          blocks:
+            - type: section
+              text:
+                type: mrkdwn
+                text: "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }} - #${{ steps.pr_data.outputs.number }}>* by ${{ steps.pr_data.outputs.author }}"
+            - type: context
+              elements:
+                - type: mrkdwn
+                  text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
+                - type: mrkdwn
+                  text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
