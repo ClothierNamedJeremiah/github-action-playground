@@ -35,7 +35,7 @@ jobs:
 
           title=$(echo "$pr_json" | jq -r '.title')
           url=$(echo "$pr_json" | jq -r '.html_url')
-          author=$(echo "$pr_json" | jq -r '.user.login')
+          author=$(echo "$pr_json" | jq -r '.user.name // .user.login') # use name set in profile, fallback to github username
           base_branch=$(echo "$pr_json" | jq -r '.base.ref')
           head_branch=$(echo "$pr_json" | jq -r '.head.ref')
           additions=$(echo "$pr_json" | jq -r '.additions')
