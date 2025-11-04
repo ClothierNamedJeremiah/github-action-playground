@@ -69,7 +69,7 @@ jobs:
                 - type: mrkdwn
                   text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
                 - type: mrkdwn
-                  text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
+                  text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} file(s)"
           EOF
 
       - name: Send slack notification
@@ -95,4 +95,4 @@ jobs:
                   - type: mrkdwn
                     text: "Branch: `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
                   - type: mrkdwn
-                    text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} files"
+                    text: "Changes: +${{ steps.pr_data.outputs.additions}}/-${{ steps.pr_data.outputs.deletions}} in ${{ steps.pr_data.outputs.changed_files}} file(s)"
