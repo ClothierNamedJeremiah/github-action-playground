@@ -1,0 +1,30 @@
+name: 'Slackbot - Pull Request Opened'
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull Request number to test/debug with'
+        required: false
+        type: number
+
+  pull_request:
+    types: [opened]
+
+jobs:
+  send_notification:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Debug pull request event
+        run: |
+          echo "[debug] Event name: ${{ github.event_name }}"
+          echo "[debug] PR title: ${{ github.event.pull_request.title }}"
+          echo "[debug] PR number: ${{ github.event.pull_request.number }}"
+          echo "[debug] PR URL: ${{ github.event.pull_request.html_url }}"
+          echo "[debug] Author: ${{ github.event.pull_request.user.login }}"
+          echo "[debug] Base branch: ${{ github.event.pull_request.base.ref }}"
+          echo "[debug] Head branch: ${{ github.event.pull_request.head.ref }}"
+          echo "[debug] Repository: ${{ github.repository }}"
+          echo "[debug] Action: ${{ github.event.action }}"
+          # Uncomment this line to see the full event payload (large!)
+          echo '[debug] ${{ toJson(github.event) }}'
