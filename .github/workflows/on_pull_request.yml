@@ -17,7 +17,10 @@ jobs:
   send_notification:
     runs-on: [ubuntu-latest]
     steps:
-      - name: Debug pull request event
+      - name: Get pull request event data
+        id: pr_data
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "[debug] Manual run detected. Fetching PR #${{ github.event.inputs.pr_number }}"
@@ -48,7 +51,7 @@ jobs:
           echo "deletions=$deletions" >> $GITHUB_OUTPUT
           echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
       
-      - name: Preview Slack message payload (manual run only)
+      - name: Preview slack message payload (manual run only)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "🔍 Previewing Slack payload (manual run only)"
