@@ -9,7 +9,9 @@ on:
         type: number
 
   pull_request:
-    types: [opened]
+    # Different activity types that can trigger this workflow
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request 
+    types: [ready_for_review]
 
 jobs:
   send_notification:
@@ -17,14 +19,63 @@ jobs:
     steps:
       - name: Debug pull request event
         run: |
-          echo "[debug] Event name: ${{ github.event_name }}"
-          echo "[debug] PR title: ${{ github.event.pull_request.title }}"
-          echo "[debug] PR number: ${{ github.event.pull_request.number }}"
-          echo "[debug] PR URL: ${{ github.event.pull_request.html_url }}"
-          echo "[debug] Author: ${{ github.event.pull_request.user.login }}"
-          echo "[debug] Base branch: ${{ github.event.pull_request.base.ref }}"
-          echo "[debug] Head branch: ${{ github.event.pull_request.head.ref }}"
-          echo "[debug] Repository: ${{ github.repository }}"
-          echo "[debug] Action: ${{ github.event.action }}"
-          # Uncomment this line to see the full event payload (large!)
-          echo '[debug] ${{ toJson(github.event) }}'
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "[debug] Manual run detected. Fetching PR #${{ github.event.inputs.pr_number }}"
+            pr_number="${{ github.event.inputs.pr_number }}"
+            pr_json=$(gh api repos/${{ github.repository }}/pulls/$pr_number)
+          else
+            echo "[debug] Triggered by PR event."
+            pr_json='${{ toJson(github.event.pull_request) }}'
+          fi
+
+          echo "[debug] $pr_json" > pr.json
+
+          title=$(echo "$pr_json" | jq -r '.title')
+          url=$(echo "$pr_json" | jq -r '.html_url')
+          author=$(echo "$pr_json" | jq -r '.user.login')
+          base_branch=$(echo "$pr_json" | jq -r '.base.ref')
+          head_branch=$(echo "$pr_json" | jq -r '.head.ref')
+          additions=$(echo "$pr_json" | jq -r '.additions')
+          deletions=$(echo "$pr_json" | jq -r '.deletions')
+          changed_files=$(echo "$pr_json" | jq -r '.changed_files')
+
+          echo "title=$title" >> $GITHUB_OUTPUT
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "author=$author" >> $GITHUB_OUTPUT
+          echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+          echo "head_branch=$head_branch" >> $GITHUB_OUTPUT
+          echo "additions=$additions" >> $GITHUB_OUTPUT
+          echo "deletions=$deletions" >> $GITHUB_OUTPUT
+          echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
+      
+      - name: Preview Slack message payload (manual run only)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "🔍 Previewing Slack payload (manual run only)"
+          cat <<'EOF'
+          {
+            "text": ":bell: *Pull Request Ready for Review!*",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*<${{ steps.pr_data.outputs.url }}|${{ steps.pr_data.outputs.title }}>*\nOpened by *${{ steps.pr_data.outputs.author }}*"
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Branch:* `${{ steps.pr_data.outputs.head_branch }}` → `${{ steps.pr_data.outputs.base_branch }}`"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Changes:* +${{ steps.pr_data.outputs.additions }} / -${{ steps.pr_data.outputs.deletions }} across ${{ steps.pr_data.outputs.changed_files }} files"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
